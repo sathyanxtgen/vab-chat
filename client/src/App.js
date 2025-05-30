@@ -6,6 +6,8 @@ function App() {
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [selectedAdvisor, setSelectedAdvisor] = useState("strategy"); // ✅ NEW
+
   const chatEndRef = useRef(null);
 
   const sendMessage = async () => {
@@ -17,10 +19,13 @@ function App() {
     setIsTyping(true);
 
     try {
-      const res = await fetch("https://vab-backend.onrender.com/api/chat", {
+      const res = await fetch("http://localhost:3001/api/chat", { // 🔁 Change URL to your backend if local
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({
+          message: input,                // ✅ Message (clean version)
+          advisor: selectedAdvisor       // ✅ Send selected advisor
+        }),
       });
 
       const data = await res.json();
@@ -61,6 +66,16 @@ function App() {
       <header className="header">
         💼 Virtual Advisory Board
         <div className="header-controls">
+          <select
+            value={selectedAdvisor}
+            onChange={(e) => setSelectedAdvisor(e.target.value)}
+            className="advisor-select" // 💄 Optional: style in CSS
+          >
+            <option value="strategy">🧠 Strategy</option>
+            <option value="marketing">📣 Marketing</option>
+            <option value="operations">⚙️ Operations</option>
+            <option value="finance">💰 Finance</option>
+          </select>
           <button onClick={() => setDarkMode(!darkMode)}>
             {darkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}
           </button>
@@ -80,7 +95,9 @@ function App() {
           </div>
         ))}
         {isTyping && (
-          <div className="typing-indicator">VAB is typing<span className="dot">.</span><span className="dot">.</span><span className="dot">.</span></div>
+          <div className="typing-indicator">
+            VAB is typing<span className="dot">.</span><span className="dot">.</span><span className="dot">.</span>
+          </div>
         )}
         <div ref={chatEndRef} />
       </div>
@@ -88,7 +105,7 @@ function App() {
       <div className="input-container">
         <input
           type="text"
-          placeholder="Ask your advisory board..."
+          placeholder={`Ask your ${selectedAdvisor} advisor...`}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}

@@ -162,3 +162,9 @@ body {
   20% { opacity: 1; }
   100% { opacity: 0.2; }
 }
+.advisor-select {
+  padding: 6px;
+  font-size: 14px;
+  border-radius: 4px;
+  margin-right: 10px;
+}
