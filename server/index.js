@@ -1,42 +1,58 @@
-const express = require("express");
-const cors = require("cors");
-const { OpenAI } = require("openai");
-require("dotenv").config();
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import fetch from 'node-fetch';
 
+dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const PORT = process.env.PORT || 3001;
 
-const useMock = process.env.MOCK_MODE === "true";
+const advisorPrompts = {
+  strategy: "You are a strategic advisor. Provide vision and long-term guidance to startups.",
+  marketing: "You are a marketing advisor. Give insights on branding, social media, and promotion.",
+  operations: "You are an operations advisor. Help with internal processes and scaling.",
+  finance: "You are a finance advisor. Give financial strategy, budgeting, and funding tips."
+};
 
-app.post("/api/chat", async (req, res) => {
-  const { messages } = req.body;
+app.post('/api/chat', async (req, res) => {
+  const { message, advisor } = req.body;
 
-  if (useMock) {
-    return res.json({
-      reply: {
-        role: "assistant",
-        content: "This is a mock advisory board response for testing."
-      }
-    });
+  if (!message || !advisor) {
+    return res.status(400).json({ error: 'Message and advisor type are required.' });
   }
 
+  const systemPrompt = advisorPrompts[advisor.toLowerCase()] || advisorPrompts['strategy'];
+  const finalPrompt = `${systemPrompt}\n\nUser: ${message}`;
+
   try {
-    const chatCompletion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: "You are a virtual advisory board." },
-        ...messages
-      ]
+    const response = await fetch('http://localhost:11434/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'mistral',
+        prompt: finalPrompt,
+        stream: false
+      })
     });
 
-    res.json({ reply: chatCompletion.choices[0].message });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Error with OpenAI API");
+    const data = await response.json();
+
+    return res.json({
+      reply: {
+        role: advisor,
+        content: data.response
+      }
+    });
+
+  } catch (error) {
+    console.error('Ollama request failed:', error);
+    return res.status(500).json({ error: 'Failed to get response from Ollama.' });
   }
 });
 
-app.listen(3001, () => console.log("Server running on http://localhost:3001"));
+app.listen(PORT, () => {
+  console.log(`✅ Server running on http://localhost:${PORT}`);
+});
