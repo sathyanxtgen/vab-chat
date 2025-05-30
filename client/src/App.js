@@ -58,8 +58,14 @@ function App() {
   };
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isTyping]);
+  setMessages([
+    {
+      role: "vab",
+      content: "👋 Welcome! Please select an advisor and ask your question."
+    }
+  ]);
+}, []);
+
 
   return (
     <div className={`app-container ${darkMode ? "dark" : ""}`}>
@@ -90,7 +96,12 @@ function App() {
             key={i}
             className={`message-bubble ${msg.role === "user" ? "user" : "vab"}`}
           >
-            <span className="sender">{msg.role === "user" ? "You" : "VAB"}</span>
+            <span className="sender">
+              {msg.role === "user"
+                ? "You"
+                : `VAB (${selectedAdvisor.charAt(0).toUpperCase() + selectedAdvisor.slice(1)})`}
+            </span>
+
             <div className="message-text">{msg.content}</div>
           </div>
         ))}
